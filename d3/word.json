@@ -1,0 +1,31 @@
+[
+
+
+
+    {"source": "梁千束", "target": "车辆",  "rela":"驾驶", "r":"8"},
+    {"source": "梁千束", "target": "着装",  "rela":"身穿", "r":"8"},
+    {"source": "梁千束", "target": "任丽泽",  "rela":"撞到", "r":"8"},
+    {"source": "梁千束", "target": "十字路口",  "rela":"所在", "r":"8"},
+    {"source": "梁千束", "target": "310115199003074755",  "rela":"身份证号", "r":"8"},
+
+    {"source": "任丽泽", "target": "十字路口",  "rela":"所在", "r":"8"},
+    {"source": "任丽泽", "target": "310115199003071730",  "rela":"身份证号", "r":"8"},
+    {"source": "任丽泽", "target": "着装1",  "rela":"身穿", "r":"8"},
+    {"source": "摄像机", "target": "十字路口",  "rela":"架设", "r":"8"},
+
+    {"source": "摄像机", "target": "视频",  "rela":"拍摄", "r":"8"},
+    {"source": "视频", "target": "梁千束",  "rela":"包含", "r":"8"},
+    {"source": "视频", "target": "任丽泽",  "rela":"包含", "r":"8"},
+    {"source": "任丽泽", "target": "自行车",  "rela":"骑行", "r":"8"},
+    {"source": "着装", "target": "T恤",  "rela":"身穿", "r":"8"},
+    {"source": "着装", "target": "牛仔裤",  "rela":"身穿", "r":"8"},
+    {"source": "着装", "target": "运动鞋",  "rela":"身穿", "r":"8"},
+    {"source": "着装1", "target": "短袖",  "rela":"身穿", "r":"8"},
+    {"source": "着装1", "target": "休闲裤",  "rela":"身穿", "r":"8"},
+    {"source": "着装1", "target": "拖鞋",  "rela":"身穿", "r":"8"},
+    {"source": "车辆", "target": "粤T·U95K8",  "rela":"显示", "r":"8"},
+    {"source": "车辆", "target": "白色",  "rela":"显示", "r":"8"},
+    {"source": "车辆", "target": "曾晓桐",  "rela":"车主", "r":"8"},
+    {"source": "姜依波", "target": "身份证号",  "rela":"110101199003073378", "r":"8"},
+    {"source": "姜依波", "target": "常用证件代码",  "rela":"110101199003073378", "r":"8"}
+]
