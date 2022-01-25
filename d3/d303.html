@@ -14,15 +14,27 @@
             padding: 0;
         }
 
+        html {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            width: 100%;
+            height: 100%;
+        }
+
         .main {
-            width: 1920px;
-            height: 1080px;
+            width: 100%;
+            height: 100%;
             background-color: #f4f4f4;
         }
 
         #keyword {
             width: 100%;
             height: 100%;
+            background: url(./atlas_bg@2x.png);
+            background-size: cover;
         }
 
         .link {
@@ -50,13 +62,13 @@
         }
 
         text {
-            font: 12px Microsoft YaHei;
+            font: 14px Microsoft YaHei;
             pointer-events: none;
             text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
         }
 
         .linetext {
-            font: 12px Microsoft YaHei;
+            font: 14px Microsoft YaHei;
         }
 
         .tooltip {
@@ -85,7 +97,7 @@
                 links.push({
                     source: root[i].source,
                     target: root[i].target,
-                    /*type: "resolved",*/
+                    type: "resolved",
                     rela: root[i].rela,
                     r: root[i].r,
                 })
@@ -106,13 +118,13 @@
                 .nodes(d3.values(nodes))//设定节点数组
                 .links(links)//设定连线数组
                 .size([width, height])//大小
-                .linkDistance(160)//连接线长度
-                .charge(-1000)//值为+，则相互吸引，绝对值越大吸引力越大。值为-，则相互排斥，绝对值越大排斥力越大
+                .linkDistance(200)//连接线长度
+                .charge(-1500)//值为+，则相互吸引，绝对值越大吸引力越大。值为-，则相互排斥，绝对值越大排斥力越大
                 .on("tick", tick)//指时间间隔，隔一段时间刷新一次画面
                 .start();//开始转换
 
             var zoom = d3.behavior.zoom()//缩放配置，
-                .scaleExtent([0.4, 2])//缩放比例
+                .scaleExtent([0.8, 2])//缩放比例
                 .on("zoom", zoomed);
 
             function zoomed() {//缩放函数
@@ -121,10 +133,27 @@
                 /*console.log(d3.event.translate+"/"+d3.event.scale);*/
             }
 
+
             var svg = d3.select("#keyword").append("svg")//添加svg元素进行图形的绘制
                 .attr("width", width)
                 .attr("height", height)
                 .call(zoom);
+
+            // 箭头
+            var marker = svg.append("marker")
+                .attr("id", "#resolve")
+                //.attr("markerUnits","strokeWidth")//设置为strokeWidth箭头会随着线的粗细发生变化
+                .attr("markerUnits", "userSpaceOnUse")
+                .attr("viewBox", "0 -5 10 10")//坐标系的区域
+                .attr("refX", 32)//箭头坐标
+                .attr("refY", -1)
+                .attr("markerWidth", 120)//标识的大小
+                .attr("markerHeight", 120)
+                .attr("orient", "auto")//绘制方向，可设定为：auto（自动确认方向）和 角度值
+                .attr("stroke-width", 1)//箭头宽度
+                .append("path")
+                .attr("d", "M0,-5L10,0L0,5")//箭头的路径
+                .attr('fill', 'gray');//箭头颜色
 
             //设置连接线
             var edges_line = svg.append("g").selectAll(".edgepath")
@@ -139,6 +168,8 @@
                 })// i也是d3.js提供的变量，表示当前处理的HTML元素在已选元素选集中的索引值
                 .style("stroke", "#B43232")//设置线条颜色
                 .style("stroke-width", 0.5)//线条粗细
+                .attr("marker-end", "url(#resolve)");//根据箭头标记的id号标记箭头
+                // .attr("marker-end", (d)=>{console.log('箭头d哦',d);return `url(#${d.type})`});//根据箭头标记的id号标记箭头
 
 
 
@@ -182,14 +213,14 @@
                 .selectAll("circle")
                 .data(force.nodes())//表示使用force.nodes数据
                 .enter().append("circle")
-                .style("fill", "#39e3db")
+                .style("fill", "#0084ff")
                 .style('stroke', "#39e3db")
                 .style('cursor', "pointer")
 
                 .attr("r", function (node, i) {
 
                     r = set_r(node.name);
-                    return r;
+                    return 40;
                 })//设置圆圈半径
                 .on("click", function (node) {
                     //单击时让连接线加粗
@@ -201,7 +232,9 @@
                         }
                     });
                     circle.style('stroke-width', 1);//所有的圆圈边框
-                    d3.select(this).style('stroke-width', 4);//被选中的圆圈边框
+                    console.log("node", node)
+                    node.fixed = true
+                    d3.select(this).style('stroke-width', 6);//被选中的圆圈边框
                 })
                 .on("dblclick", function (d) {
                     //双击节点时节点恢复拖拽
@@ -236,7 +269,8 @@
                 .append("text")//添加text标签
                 .attr("dy", ".35em") //将文字下移
                 .attr("text-anchor", "middle")//在圆圈中加上数据
-                .style('fill', "#555")
+                // .style('fill', "#fff")
+                .style("font-weight", 'normal')
                 .style('cursor', "pointer")
                 .on("mouseover", function (d) {
                     set_tooltip(d.name);
@@ -363,9 +397,9 @@
             }
 
             zoom.translate([242, 180]);
-            zoom.scale(zoom.scale() * 0.4);
+            zoom.scale(zoom.scale() * 0.8);
             svg.selectAll("g").attr("transform",//svg下的g标签移动大小
-                "translate(242,180)scale(0.4)");
+                "translate(242,180)scale(1)");
 
         })
     </script>
