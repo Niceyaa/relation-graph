@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.5.0/lodash.min.js"></script>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+</head>
+
+<body>
+</body>
+<script>
+    // 下面是JS部分的代码，使用前请连接`https://d3js.org/d3.v3.min.js` 和 `https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.5.0/lodash.min.js`
+    var nodes = [{}, {}, {}, {}, {}, {}];
+    var links = [
+        // one link
+        { source: 0, target: 1 },
+
+        // two links
+        { source: 2, target: 1 },
+        { source: 1, target: 2 },
+
+        //three links
+        { source: 3, target: 2 },
+        { source: 2, target: 3 },
+        { source: 2, target: 3 },
+
+        // four links
+        { source: 3, target: 4 },
+        { source: 3, target: 4 },
+        { source: 3, target: 4 },
+        { source: 3, target: 4 },
+
+        // five links
+        { source: 4, target: 5 },
+        { source: 4, target: 5 },
+        { source: 4, target: 5 }
+    ];
+
+    console.log('_',_)
+    // DATA FORMATTING
+    _.each(links, function (link) {
+        var same = _.where(links, {
+            'source': link.source,
+            'target': link.target
+        });
+        var sameAlt = _.where(links, {
+            'source': link.target,
+            'target': link.source
+        });
+        var sameAll = same.concat(sameAlt);
+        console.log('sameAll',sameAll)
+
+        _.each(sameAll, function (s, i) {
+            s.sameIndex = (i + 1);
+            s.sameTotal = sameAll.length;
+            s.sameTotalHalf = (s.sameTotal / 2);
+            s.sameUneven = ((s.sameTotal % 2) !== 0);
+            s.sameMiddleLink = ((s.sameUneven === true) && (Math.ceil(s.sameTotalHalf) === s.sameIndex));
+            s.sameLowerHalf = (s.sameIndex <= s.sameTotalHalf);
+            s.sameArcDirection = s.sameLowerHalf ? 0 : 1;
+            s.sameIndexCorrected = s.sameLowerHalf ? s.sameIndex : (s.sameIndex - Math.ceil(s.sameTotalHalf));
+        });
+
+        let sameStandard = sameAll[0];
+        let sourceStandard = sameStandard.source;
+        let targetStandard = sameStandard.target;
+        _.each(sameAll, function (s, i) {
+            if (s.source === targetStandard && s.target === sourceStandard && s.sameTotal > 1) {
+                s.sameArcDirection = s.sameArcDirection === 0 ? 1 : 0
+            }
+        })
+    });
+
+    var maxSame = _.chain(links)
+        .sortBy(function (x) {
+            return x.sameTotal;
+        })
+        .last()
+        .value().sameTotal;
+
+    _.each(links, function (link) {
+        link.maxSameHalf = Math.floor(maxSame / 2);
+    });
+
+    var width = 1200,
+        height = 1000;
+    var force = d3.layout.force()
+        .nodes(nodes)
+        .links(links)
+        .size([width, height])
+        .linkDistance(300)
+        .charge(-800)
+        .on('tick', tick)
+        .start();
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    var path = svg.append("g").selectAll("path")
+        .data(force.links())
+        .enter().append("path")
+        .style("stroke-width",1)
+        .style("fill",'#fff')
+        .style("stroke", function (d) {
+            console.log('d',d)
+            return 'red'
+            return d3.scale.category20().range()[d.sameIndex - 1];
+        });
+
+    var circle = svg.append("g").selectAll("circle")
+        .data(force.nodes())
+        .enter().append("circle")
+        .attr("r", 18)
+        .call(force.drag);
+
+    function tick(d) {
+        circle.attr("transform", function (d) {
+            return "translate(" + d.x + "," + d.y + ")";
+        });
+        path.attr("d", linkArc);
+    }
+
+    function linkArc(d) {
+        var dx = (d.target.x - d.source.x),
+            dy = (d.target.y - d.source.y),
+            dr = Math.sqrt(dx * dx + dy * dy),
+            unevenCorrection = (d.sameUneven ? 0 : 0.5),
+            arc = ((dr * d.maxSameHalf) / (d.sameIndexCorrected - unevenCorrection));
+
+        if (d.sameMiddleLink) {
+            arc = 0;
+        }
+
+        return "M" + d.source.x + "," + d.source.y + "A" + arc + "," + arc + " 0 0," + d.sameArcDirection + " " + d.target.x + "," + d.target.y;
+    }    
+</script>

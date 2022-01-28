@@ -90,7 +90,7 @@
         <div id="keyword"></div>
     </div>
     <script>
-        d3.json("./word.json", function (error, root) {
+        d3.json("./word1.json", function (error, root) {
 
             var links = [];
             for (var i = 0; i < root.length; i++) {
@@ -100,6 +100,8 @@
                     type: "resolved",
                     rela: root[i].rela,
                     r: root[i].r,
+                    repeat: root[i].repeat,
+                    total: root[i].total ? root[i].total : 1
                 })
             }
 
@@ -118,8 +120,15 @@
                 .nodes(d3.values(nodes))//设定节点数组
                 .links(links)//设定连线数组
                 .size([width, height])//大小
+                // .linkDistance((link,idx)=>{
+                //     console.log("设置连接线的长度",link,idx)
+                //     return idx*20
+                // })
                 .linkDistance(200)//连接线长度
-                .charge(-1500)//值为+，则相互吸引，绝对值越大吸引力越大。值为-，则相互排斥，绝对值越大排斥力越大
+                // .friction(0.8) // 摩擦系数 默认为 0.9
+                // .linkStrength(0.4) // 链接间强度
+                .charge(-1400)//值为+，则相互吸引，绝对值越大吸引力越大。值为-，则相互排斥，绝对值越大排斥力越大
+                .alpha(1)
                 .on("tick", tick)//指时间间隔，隔一段时间刷新一次画面
                 .start();//开始转换
 
@@ -141,19 +150,22 @@
 
             // 箭头
             var marker = svg.append("marker")
-                .attr("id", "#resolve")
-                //.attr("markerUnits","strokeWidth")//设置为strokeWidth箭头会随着线的粗细发生变化
+                .attr("id", "resolve")
+                // .attr("markerUnits","strokeWidth")//设置为strokeWidth箭头会随着线的粗细发生变化
                 .attr("markerUnits", "userSpaceOnUse")
                 .attr("viewBox", "0 -5 10 10")//坐标系的区域
-                .attr("refX", 32)//箭头坐标
-                .attr("refY", -1)
-                .attr("markerWidth", 120)//标识的大小
-                .attr("markerHeight", 120)
+                .attr("refX", 35)//箭头坐标
+                .attr("refY", 0)
+                .attr("markerWidth", 16)//标识的大小
+                .attr("markerHeight", 16)
                 .attr("orient", "auto")//绘制方向，可设定为：auto（自动确认方向）和 角度值
                 .attr("stroke-width", 1)//箭头宽度
                 .append("path")
                 .attr("d", "M0,-5L10,0L0,5")//箭头的路径
-                .attr('fill', 'gray');//箭头颜色
+                .attr('fill', (val, d, a) => {
+                    // console.log('箭头颜色', val, d, a)
+                    return '#eee'
+                });//箭头颜色
 
             //设置连接线
             var edges_line = svg.append("g").selectAll(".edgepath")
@@ -162,16 +174,50 @@
                 //可以参考http://www.ourd3js.com/wordpress/797/ enter、exit、update的区别
                 .append("path")//添加path标签
                 .attr({
-                    'd': function (d) { return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y },//变量 d 是由D3.js提供的一个在匿名函数中的可用变量。这个变量是对当前要处理的元素的_data_属性的引用。
+                    'd': d => dealLine(d),//变量 d 是由D3.js提供的一个在匿名函数中的可用变量。这个变量是对当前要处理的元素的_data_属性的引用。
                     'class': 'edgepath',//定义该path标签class为edgepath
-                    'id': function (d, i) { return 'edgepath' + i; }
+                    'id': function (d, i) { return 'edgepath' + i; },
+                    // 'opacity':1
+                    "fill": 'none'
                 })// i也是d3.js提供的变量，表示当前处理的HTML元素在已选元素选集中的索引值
-                .style("stroke", "#B43232")//设置线条颜色
-                .style("stroke-width", 0.5)//线条粗细
+                // .style("stroke", "#B43232")//设置线条颜色
+                .style("stroke", (color, idx) => {
+                    // console.log("设置连接线color", color, idx)
+                    return idx > 20 ? "#B43232" : 'green'
+                })//设置线条颜色
+                .style("stroke-width", 1)//线条粗细
                 .attr("marker-end", "url(#resolve)");//根据箭头标记的id号标记箭头
-                // .attr("marker-end", (d)=>{console.log('箭头d哦',d);return `url(#${d.type})`});//根据箭头标记的id号标记箭头
+            // .attr("marker-end", (d)=>{console.log('箭头d哦',d);return `url(#${d.type})`});//根据箭头标记的id号标记箭头
 
 
+            function dealLine(d) {
+                // console.log('d', d)
+                var dx = (d.target.x - d.source.x),
+                    dy = (d.target.y - d.source.y),
+                    dr = Math.sqrt(dx * dx + dy * dy),
+                    unevenCorrection = 1
+                // total 表示重复次数 === 1 表示没有重复的 当有重复的时候，并且重复次数为奇数时，第一条为直线
+                if (d.total === 1 || (d.total % 2 === 1 && d.repeat === 1)) {
+                    // if (d.total === 1) {
+                    arc = 0;
+                }else{
+                    // 重复次数大于 1 重复次数为 偶数时
+                    if(d.total%2===0){
+                        let isOddIdx = d.repeat%2===1?d.repeat:d.repeat-1
+                        arc = (dr * isOddIdx) / unevenCorrection;
+                    }else{
+                        let isEvenIdx = d.repeat%2===0?d.repeat:d.repeat-1
+                        arc = (dr * isEvenIdx) / unevenCorrection;
+                    }
+                }
+                let direction = (d.total > 1 && d.repeat % 2 === 1) ? 1 : 0
+
+                return "M" + d.source.x + "," + d.source.y + "A" + arc + " " + arc + " 0 0 " + direction + d.target.x + " " + d.target.y;
+                // return "M" + d.source.x + "," + d.source.y + "A" + arc + " " + arc + " 0 0 " + d.repeat + " " + d.target.x + " " + d.target.y;
+                // return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y
+            }
+
+            // console.log('设置连接线', edges_line)
 
             //连线上的文字
             var edges_text = svg.append("g").selectAll(".edgelabel")
@@ -181,9 +227,11 @@
                 .attr({
                     'class': 'edgelabel',//定义该text标签class为edgelabel
                     'id': function (d, i) { return 'edgepath' + i; },
-                    'dx': 50,//在连线上的坐标
+                    'dx': 100,//在连线上的坐标
                     'dy': 0
                 });
+
+            console.log('连线上的文字', edges_text)
 
             //设置线条上的文字路径
             edges_text.append('textPath')
@@ -196,7 +244,7 @@
                     .on("dragstart", function (d) {
                         d3.event.sourceEvent.stopPropagation(); //取消默认事件
                         d.fixed = true;    //拖拽开始后设定被拖拽对象为固定
-
+                        // force.selectAll("circle").attr('fixed',true)
                     });
             }
 
@@ -228,7 +276,7 @@
                         if (line.source.name == node.name || line.target.name == node.name) {//当与连接点连接时变粗
                             return 2;
                         } else {
-                            return 0.5;
+                            return 1;
                         }
                     });
                     circle.style('stroke-width', 1);//所有的圆圈边框
@@ -336,8 +384,9 @@
                 circle.attr("transform", transform1);//圆圈
                 text.attr("transform", transform1);//顶点文字
                 edges_line.attr('d', function (d) { //连接线
-                    var path = 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y;
-                    return path;
+                    return dealLine(d)
+                    // var path = 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y;
+                    // return path;
                 });
 
                 edges_text.attr('transform', function (d, i) {//连线上的文字
