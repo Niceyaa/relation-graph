@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+        }
+
+        .node circle {
+            fill: #999;
+        }
+
+        .node text {
+            font: 10px sans-serif;
+        }
+
+        .node--internal circle {
+            fill: #555;
+        }
+
+        .node--internal text {
+            text-shadow: 0 1px 0 #fff, 0 -1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff;
+        }
+
+        .link {
+            fill: none;
+            stroke: lightcoral;
+            stroke-opacity: 0.4;
+            stroke-width: 1.5px;
+        }
+
+        form {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            position: absolute;
+            left: 10px;
+            top: 10px;
+        }
+
+        label {
+            display: block;
+        }
+
+        #mountNode {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="mountNode"></div>
+</body>
+
+
+<script src="//d3js.org/d3.v4.min.js"></script>
+<script>
+
+    var width = window.innerWidth,
+        height = window.innerHeight
+    var svg = d3.select("#mountNode").append('svg').attr("width", width).attr('height', height),
+        g = svg.append("g").attr("transform", "translate(40,0)");
+
+    var tree = d3.tree()
+        // .size([height - 400, width - 160]);
+        .size([height, width]);
+
+    var cluster = d3.cluster()
+        // .size([height, width - 160]);
+        .size([width, height]);
+
+    var stratify = d3.stratify()
+        .parentId(function (d) { return d.id.substring(0, d.id.lastIndexOf(".")); });
+
+    d3.csv("./flare.crv", function (error, data) {
+        if (error) throw error;
+        console.log('data', data)
+
+        var root = stratify(data)
+            .sort(function (a, b) { return (a.height - b.height) || a.id.localeCompare(b.id); });
+
+        console.log('root', root)
+
+        tree(root);
+
+        var link = g.selectAll(".link")
+            .data(root.descendants().slice(1))
+            .enter().append("path")
+            .attr("class", "link")
+            .attr("d", diagonal)
+
+        var node = g.selectAll(".node")
+            .data(root.descendants())
+            .enter().append("g")
+            .attr("class", function (d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
+            .attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; });
+
+        node.append("rect")
+            .attr("x", d => d.x)
+            .attr("y", d => d.y)
+            .attr('width', 50)
+            .attr('height', 30)
+            .attr('fill', '#fff')
+            .attr('stroke', 'skyblue')
+
+        node.append("text")
+            .attr("dy", 3)
+            .attr("x", function (d) { return d.children ? -8 : 8; })
+            .style("text-anchor", function (d) { return d.children ? "end" : "start"; })
+            .text(function (d) { return d.id.substring(d.id.lastIndexOf(".") + 1); });
+
+        // var timeout = setTimeout(function () {
+        //     d3.select("input[value=\"tree\"]")
+        //         .property("checked", true)
+        //         .dispatch("change");
+        // }, 1000);
+
+        // function changed() {
+        //     timeout = clearTimeout(timeout);
+        //     (this.value === "tree" ? tree : cluster)(root);
+        //     var t = d3.transition().duration(750);
+        //     node.transition(t).attr("transform", function (d) { return "translate(" + d.y + "," + d.x + ")"; });
+        //     link.transition(t).attr("d", diagonal);
+        // }
+    });
+
+    function diagonal(d) {
+        // console.log('d:',d)
+        let distanceX = d.parent.x + (d.x - d.parent.x) * 2 / 3
+        let distanceY = d.parent.y + (d.y - d.parent.y) * 2 / 3
+        return `M  ${d.parent.y},${d.parent.x} H ${distanceY}V ${d.x} L ${d.y},${d.x}`
+        // return `M  ${d.parent.x},${d.parent.y} H ${distanceX}V ${d.y} L ${d.x},${d.y}`
+        /* return "M" + d.y + "," + d.x
+            + "C" + (d.parent.y + 100) + "," + d.x
+            + " " + (d.parent.y + 100) + "," + d.parent.x
+            + " " + d.parent.y + "," + d.parent.x; */
+    }
+
+</script>
